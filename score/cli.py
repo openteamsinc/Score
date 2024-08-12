@@ -2,16 +2,36 @@ import os
 
 import click
 import duckdb
-
+import pandas as pd
 from .conda.get_conda_package_names import get_conda_package_names
 from .conda.scrape_conda import scrape_conda
 from .data_retrieval.json_scraper import scrape_json
 from .data_retrieval.web_scraper import scrape_web
+from .github.github_scraper import scrape_github_data
 from .logger import setup_logger
 from .utils.get_pypi_package_list import get_pypi_package_names
 from .vulnerabilities.scrape_vulnerabilities import scrape_vulnerabilities
+from google.cloud import storage
 
 OUTPUT_ROOT = os.environ.get("OUTPUT_ROOT", "./output")
+
+
+def read_parquet_from_gcs(gcs_url):
+    # Parse the GCS URL
+    bucket_name, blob_name = gcs_url.replace("gs://", "").split("/", 1)
+
+    # Initialize a GCS client
+    client = storage.Client()
+
+    # Get the bucket and blob
+    bucket = client.get_bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+
+    # Download the content of the blob as a string
+    content = blob.download_as_bytes()
+
+    # Read the parquet file from the bytes
+    return pd.read_parquet(pd.io.common.BytesIO(content))
 
 
 partition_option = click.option(
@@ -79,6 +99,55 @@ def scrape_pypi_web(num_partitions, partition, output):
 
     click.echo(f"Saving data to {output}")
     df.to_parquet(output, partition_cols=["partition"])
+    click.echo("Scraping completed.")
+
+
+@cli.command()
+@click.option(
+    "-i",
+    "--input",
+    default=os.path.join(OUTPUT_ROOT, "source-urls.parquet"),
+    help="The input file containing the GitHub URLs",
+)
+@click.option(
+    "-o",
+    "--output",
+    default=os.path.join(OUTPUT_ROOT, "github-details"),
+    help="The output directory to save the detailed GitHub data in hive partition",
+)
+@partition_option
+@num_partitions_option
+def scrape_github(input, output, num_partitions, partition):
+    click.echo("Scraping GitHub data.")
+
+    if input.startswith("gs://"):
+        # Read from GCS
+        df = read_parquet_from_gcs(input)
+    else:
+        # Read from local file
+        df = pd.read_parquet(input)
+
+    if df.empty:
+        click.echo("No valid GitHub URLs found in the input file.")
+        return
+
+    total_rows = len(df)
+    partition_size = total_rows // num_partitions
+    start_index = partition * partition_size
+    end_index = (
+        total_rows if partition == num_partitions - 1 else start_index + partition_size
+    )
+
+    df_partition = df.iloc[start_index:end_index]
+    click.echo(
+        f"Processing {len(df_partition)} URLs in partition {partition + 1} of {num_partitions}"
+    )
+
+    result_df = scrape_github_data(df_partition)
+    result_df["partition"] = partition
+
+    click.echo(f"Saving data to {output} in partition {partition}")
+    result_df.to_parquet(output, partition_cols=["partition"])
     click.echo("Scraping completed.")
 
 
