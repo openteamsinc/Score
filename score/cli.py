@@ -9,6 +9,8 @@ from .conda.scrape_conda import scrape_conda
 from .data_retrieval.json_scraper import scrape_json
 from .data_retrieval.pypi_downloads import get_bulk_download_counts
 from .logger import setup_logger
+from .npm.get_npm_package_names import get_npm_package_names
+from .npm.scrape_npm import scrape_npm
 from .utils.get_pypi_package_list import get_pypi_package_names
 from .vulnerabilities.scrape_vulnerabilities import scrape_vulnerabilities
 from .git_vcs.get_git_urls import get_git_urls
@@ -130,9 +132,10 @@ def conda(num_partitions, partition, output, channel):
 def vulnerabilities(num_partitions, partition, output, ecosystem):
     if ecosystem == "PyPI":
         packages = get_pypi_package_names(num_partitions, partition)
+    elif ecosystem == "npm":
+        packages = get_npm_package_names(num_partitions, partition)
     else:
         raise ValueError(f"Unsupported ecosystem: {ecosystem}")
-
     click.echo(
         f"Will process {len(packages)} packages in partition {partition} of {num_partitions}"
     )
@@ -143,6 +146,27 @@ def vulnerabilities(num_partitions, partition, output, ecosystem):
 
     click.echo(f"Saving data to {output}")
     df.to_parquet(output, partition_cols=["ecosystem", "partition"])
+    click.echo("Scraping completed.")
+
+
+@cli.command()
+@click.option(
+    "--output",
+    default=os.path.join(OUTPUT_ROOT, "npm"),
+    help="The output directory to save the scraped data in hive partition",
+)
+@partition_option
+@num_partitions_option
+def npm(num_partitions, partition, output):
+    packages = get_npm_package_names(num_partitions, partition)
+    click.echo(
+        f"Will process {len(packages)} packages in partition {partition} of {num_partitions}"
+    )
+    df = scrape_npm(packages)
+    df["partition"] = partition
+
+    click.echo(f"Saving data to {output}")
+    df.to_parquet(output, partition_cols=["partition"])
     click.echo("Scraping completed.")
 
 
