@@ -12,4 +12,4 @@ GitPython~=3.1.43
 strsimpy~=0.2.1
 google-cloud-bigquery==3.27.0
 toml~=0.10.2
-fastapi[standard]~=0.115.5
+fastapi[standard]~=0.115.6
