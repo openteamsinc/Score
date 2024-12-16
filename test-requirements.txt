@@ -3,4 +3,4 @@ flake8~=7.1.1
 pytest~=8.3.4
 robotframework==7.1.1
 robotframework-requests==0.9.7
-sqlfluff==3.2.5
+sqlfluff==3.3.0
