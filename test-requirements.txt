@@ -1,6 +1,6 @@
-black~=24.10.0
-flake8~=7.1.1
+black~=25.1.0
+flake8~=7.1.2
 pytest~=8.3.4
-robotframework==7.2
+robotframework==7.2.2
 robotframework-requests==0.9.7
-sqlfluff==3.3.0
+sqlfluff==3.3.1
