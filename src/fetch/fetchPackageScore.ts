@@ -20,9 +20,22 @@ type OKResponse = {
 
 type ScoreResponse = OKResponse;
 
+export const ScoreValues = {
+  HEALTHY: "Healthy",
+  MATURE: "Mature",
+  CAUTION_NEEDED: "Caution Needed",
+  MODERATE_RISK: "Moderate Risk",
+  HIGH_RISK: "High Risk",
+  EXPERIMENTAL: "Experimental",
+  STALE: "Stale",
+  LEGACY: "Legacy",
+  UNKNOWN: "Unknown",
+  PLACEHOLDER: "Placeholder",
+};
+
 export default async function fetchPackageScore(
   ecosystem: string,
-  packageName: string,
+  packageName: string
 ) {
   const url = `https:/opensourcescore.dev/score/${ecosystem}/${packageName}`;
 

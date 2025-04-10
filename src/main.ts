@@ -7,55 +7,8 @@ import {
 } from "./pypi/parseRequirements";
 import * as fs from "fs/promises";
 import getLine from "./utils/getLine";
-import fetchNoteDescriptions, {
-  NoteDescrs,
-} from "./fetch/fetchNoteDescriptions";
-
-const ScoreValues = {
-  HEALTHY: "Healthy",
-  MATURE: "Mature",
-  CAUTION_NEEDED: "Caution Needed",
-  MODERATE_RISK: "Moderate Risk",
-  HIGH_RISK: "High Risk",
-  EXPERIMENTAL: "Experimental",
-  STALE: "Stale",
-  LEGACY: "Legacy",
-  UNKNOWN: "Unknown",
-  PLACEHOLDER: "Placeholder",
-};
-
-const noLog = () => {};
-
-function getLog(status: string) {
-  switch (status) {
-    case ScoreValues.MATURE:
-    case ScoreValues.HEALTHY:
-      return noLog;
-    case ScoreValues.HIGH_RISK:
-    case ScoreValues.UNKNOWN:
-      return core.error;
-    case ScoreValues.PLACEHOLDER:
-    case ScoreValues.CAUTION_NEEDED:
-      return core.notice;
-    default:
-      return core.warning;
-  }
-}
-
-function createMessage(
-  noteDescriptions: NoteDescrs,
-  name: string,
-  category: string,
-  catScore: CategorizedScore
-): [string, string] {
-  const { value, notes } = catScore;
-  const messages = notes
-    .map((code) => noteDescriptions[code]?.description || code)
-    .join("\n");
-  const message = `Notes:\n${messages}`;
-  const title = `${category}: ${value} - ${name}`;
-  return [title, message];
-}
+import fetchNoteDescriptions from "./fetch/fetchNoteDescriptions";
+import { createMessage, getLog } from "./messages";
 
 async function main() {
   const filePath = "requirements.txt";
