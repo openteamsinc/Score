@@ -18774,6 +18774,18 @@ var require_core = __commonJS((exports) => {
 });
 
 // src/fetch/fetchPackageScore.ts
+var ScoreValues = {
+  HEALTHY: "Healthy",
+  MATURE: "Mature",
+  CAUTION_NEEDED: "Caution Needed",
+  MODERATE_RISK: "Moderate Risk",
+  HIGH_RISK: "High Risk",
+  EXPERIMENTAL: "Experimental",
+  STALE: "Stale",
+  LEGACY: "Legacy",
+  UNKNOWN: "Unknown",
+  PLACEHOLDER: "Placeholder"
+};
 async function fetchPackageScore(ecosystem, packageName) {
   const url = `https:/opensourcescore.dev/score/${ecosystem}/${packageName}`;
   const response = await fetch(url);
@@ -18784,9 +18796,6 @@ async function fetchPackageScore(ecosystem, packageName) {
   }
   return data;
 }
-
-// src/main.ts
-var import_core = __toESM(require_core(), 1);
 
 // src/pypi/parseRequirements.ts
 function preprocessContent(content) {
@@ -18974,19 +18983,8 @@ async function fetchNoteDescriptions() {
   return data.notes;
 }
 
-// src/main.ts
-var ScoreValues = {
-  HEALTHY: "Healthy",
-  MATURE: "Mature",
-  CAUTION_NEEDED: "Caution Needed",
-  MODERATE_RISK: "Moderate Risk",
-  HIGH_RISK: "High Risk",
-  EXPERIMENTAL: "Experimental",
-  STALE: "Stale",
-  LEGACY: "Legacy",
-  UNKNOWN: "Unknown",
-  PLACEHOLDER: "Placeholder"
-};
+// src/messages.ts
+var import_core = __toESM(require_core(), 1);
 var noLog = () => {};
 function getLog(status) {
   switch (status) {
@@ -19007,11 +19005,13 @@ function createMessage(noteDescriptions, name, category, catScore) {
   const { value, notes } = catScore;
   const messages = notes.map((code) => noteDescriptions[code]?.description || code).join(`
 `);
-  const message = `Notes:
-${messages}`;
+  const message = `
+ * ${messages}`;
   const title = `${category}: ${value} - ${name}`;
   return [title, message];
 }
+
+// src/main.ts
 async function main() {
   const filePath = "requirements.txt";
   const noteDescriptions = await fetchNoteDescriptions();

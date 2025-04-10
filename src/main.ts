@@ -1,5 +1,4 @@
-import fetchPackageScore, { CategorizedScore } from "./fetch/fetchPackageScore";
-import core from "@actions/core";
+import fetchPackageScore from "./fetch/fetchPackageScore";
 
 import {
   parseRequirements,

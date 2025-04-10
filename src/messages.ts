@@ -24,7 +24,7 @@ export function createMessage(
   noteDescriptions: NoteDescrs,
   name: string,
   category: string,
-  catScore: CategorizedScore
+  catScore: CategorizedScore,
 ): [string, string] {
   const { value, notes } = catScore;
   const messages = notes

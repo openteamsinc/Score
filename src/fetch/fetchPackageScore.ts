@@ -35,7 +35,7 @@ export const ScoreValues = {
 
 export default async function fetchPackageScore(
   ecosystem: string,
-  packageName: string
+  packageName: string,
 ) {
   const url = `https:/opensourcescore.dev/score/${ecosystem}/${packageName}`;
 

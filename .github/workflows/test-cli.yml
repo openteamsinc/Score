@@ -27,6 +27,10 @@ jobs:
           INPUT_ANNOTATE-MODIFIED-ONLY: true
         run: |
           env node dist/index.mjs
+      - name: Pip Action
+        uses: ./
+        with:
+          ecosystem: pip
 
       # - name: Run Conda CLI
       #   run: |
