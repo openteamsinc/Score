@@ -1,25 +1,30 @@
-import fetchPackageScore, { CategorizedScore } from './fetch/fetchPackageScore';
-import core from '@actions/core';
+import fetchPackageScore, { CategorizedScore } from "./fetch/fetchPackageScore";
+import core from "@actions/core";
 
-import { parseRequirements, StandardRequirement } from './pypi/parseRequirements';
-import * as fs from 'fs/promises';
-import getLine from './utils/getLine';
-import fetchNoteDescriptions, { NoteDescrs } from './fetch/fetchNoteDescriptions';
+import {
+  parseRequirements,
+  StandardRequirement,
+} from "./pypi/parseRequirements";
+import * as fs from "fs/promises";
+import getLine from "./utils/getLine";
+import fetchNoteDescriptions, {
+  NoteDescrs,
+} from "./fetch/fetchNoteDescriptions";
 
 const ScoreValues = {
-  HEALTHY: 'Healthy',
-  MATURE: 'Mature',
-  CAUTION_NEEDED: 'Caution Needed',
-  MODERATE_RISK: 'Moderate Risk',
-  HIGH_RISK: 'High Risk',
-  EXPERIMENTAL: 'Experimental',
-  STALE: 'Stale',
-  LEGACY: 'Legacy',
-  UNKNOWN: 'Unknown',
-  PLACEHOLDER: 'Placeholder',
+  HEALTHY: "Healthy",
+  MATURE: "Mature",
+  CAUTION_NEEDED: "Caution Needed",
+  MODERATE_RISK: "Moderate Risk",
+  HIGH_RISK: "High Risk",
+  EXPERIMENTAL: "Experimental",
+  STALE: "Stale",
+  LEGACY: "Legacy",
+  UNKNOWN: "Unknown",
+  PLACEHOLDER: "Placeholder",
 };
 
-const noLog = (message: string, properties: unknown) => {};
+const noLog = () => {};
 
 function getLog(status: string) {
   switch (status) {
@@ -37,25 +42,37 @@ function getLog(status: string) {
   }
 }
 
-function createMessage(noteDescriptions: NoteDescrs, name: string, category: string, catScore: CategorizedScore): [string, string] {
+function createMessage(
+  noteDescriptions: NoteDescrs,
+  name: string,
+  category: string,
+  catScore: CategorizedScore
+): [string, string] {
   const { value, notes } = catScore;
-  const messages = notes.map((code) => noteDescriptions[code]?.description || code).join('\n');
+  const messages = notes
+    .map((code) => noteDescriptions[code]?.description || code)
+    .join("\n");
   const message = `Notes:\n${messages}`;
   const title = `${category}: ${value} - ${name}`;
   return [title, message];
 }
 
 async function main() {
-  const filePath = 'requirements.txt';
+  const filePath = "requirements.txt";
   const noteDescriptions = await fetchNoteDescriptions();
-  const content = await fs.readFile(filePath, { encoding: 'utf-8' });
+  const content = await fs.readFile(filePath, { encoding: "utf-8" });
 
   const postNotice = ({ name, score }) => {
     const lineNumber = getLine(content, name);
 
-    for (const category of ['maturity', 'health_risk', 'security', 'legal']) {
+    for (const category of ["maturity", "health_risk", "security", "legal"]) {
       const logFn = getLog(score[category].value);
-      const [title, message] = createMessage(noteDescriptions, name, category, score[category]);
+      const [title, message] = createMessage(
+        noteDescriptions,
+        name,
+        category,
+        score[category]
+      );
       logFn(message, {
         title,
         file: filePath,
@@ -68,9 +85,9 @@ async function main() {
   const reqs = await parseRequirements(content);
 
   const pScores = reqs
-    .filter((req): req is StandardRequirement => req.type === 'requirement')
+    .filter((req): req is StandardRequirement => req.type === "requirement")
     .map(({ name }) => {
-      return fetchPackageScore('pypi', name)
+      return fetchPackageScore("pypi", name)
         .then(({ score }) => ({
           name,
           score,

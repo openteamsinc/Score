@@ -3,7 +3,7 @@
 
 // Represents a standard package requirement (e.g., 'requests[security]>=2.8.1')
 export type StandardRequirement = {
-  type: 'requirement';
+  type: "requirement";
   line: string; // Store original line for reference / complex parsing later
   name: string;
   extras?: string[];
@@ -14,7 +14,7 @@ export type StandardRequirement = {
 
 // Represents an editable install (e.g., '-e .', '-e git+https://...')
 type EditableRequirement = {
-  type: 'editable';
+  type: "editable";
   line: string;
   path_or_url: string;
   is_vcs: boolean;
@@ -22,7 +22,7 @@ type EditableRequirement = {
 
 // Represents a direct URL or path to an archive (e.g., 'https://...', './pkg.whl', 'name @ https://...')
 type ArchiveRequirement = {
-  type: 'archive';
+  type: "archive";
   line: string;
   url_or_path: string;
   name?: string;
@@ -31,21 +31,26 @@ type ArchiveRequirement = {
 
 // Represents a reference to another file (e.g., '-r base.txt', '-c constraints.txt')
 type FileReferenceRequirement = {
-  type: 'file_reference';
+  type: "file_reference";
   line: string;
-  reference_type: 'requirement' | 'constraint';
+  reference_type: "requirement" | "constraint";
   filename: string;
 };
 
 // Represents a pip command-line option (e.g., '--index-url ...')
 type OptionRequirement = {
-  type: 'option';
+  type: "option";
   line: string;
   option_string: string;
 };
 
 // Discriminated union representing any single parsed line/directive
-export type Requirement = StandardRequirement | EditableRequirement | ArchiveRequirement | FileReferenceRequirement | OptionRequirement;
+export type Requirement =
+  | StandardRequirement
+  | EditableRequirement
+  | ArchiveRequirement
+  | FileReferenceRequirement
+  | OptionRequirement;
 
 // The overall output: an array of parsed requirements/directives
 export type Requirements = Requirement[];
@@ -60,19 +65,22 @@ export type Requirements = Requirement[];
 function preprocessContent(content: string): string[] {
   const rawLines = content.split(/\r?\n/);
   const logicalLines: string[] = [];
-  let currentLine = '';
+  let currentLine = "";
 
   for (const rawLine of rawLines) {
     const trimmedLine = rawLine.trim();
-    if (trimmedLine.endsWith('\\')) {
-      currentLine += trimmedLine.slice(0, -1).trimEnd() + ' '; // Append line part without '\', add space
+    if (trimmedLine.endsWith("\\")) {
+      currentLine += trimmedLine.slice(0, -1).trimEnd() + " "; // Append line part without '\', add space
     } else {
       currentLine += trimmedLine;
       // Process the completed logical line
       if (currentLine) {
         // Find comment start '#' that's not part of a URL fragment
         const commentMatch = currentLine.match(/(^|\s)#/);
-        const commentIndex = commentMatch && commentMatch.index ? commentMatch.index + commentMatch[1].length : -1;
+        const commentIndex =
+          commentMatch && commentMatch.index
+            ? commentMatch.index + commentMatch[1].length
+            : -1;
 
         if (commentIndex !== -1) {
           // Check if '#' is inside quotes (simplistic check)
@@ -89,7 +97,7 @@ function preprocessContent(content: string): string[] {
           logicalLines.push(currentLine);
         }
       }
-      currentLine = ''; // Reset for the next logical line
+      currentLine = ""; // Reset for the next logical line
     }
   }
   // Add any remaining part if the file ends mid-continuation (unlikely but possible)
@@ -97,7 +105,7 @@ function preprocessContent(content: string): string[] {
     logicalLines.push(currentLine.trim());
   }
 
-  return logicalLines.filter((line) => line && !line.startsWith('#')); // Remove empty lines and full-line comments
+  return logicalLines.filter((line) => line && !line.startsWith("#")); // Remove empty lines and full-line comments
 }
 
 // --- Main Parsing Function ---
@@ -112,7 +120,9 @@ function preprocessContent(content: string): string[] {
  * @returns A Promise resolving to an array of Requirement objects.
  * @throws If the file cannot be read.
  */
-export async function parseRequirements(content: string): Promise<Requirements> {
+export async function parseRequirements(
+  content: string,
+): Promise<Requirements> {
   const logicalLines = preprocessContent(content);
   const requirements: Requirements = [];
 
@@ -120,9 +130,9 @@ export async function parseRequirements(content: string): Promise<Requirements> 
     const trimmedLine = line.trim(); // Already trimmed but good practice
 
     // 1. Check for Options (e.g., --index-url)
-    if (trimmedLine.startsWith('--')) {
+    if (trimmedLine.startsWith("--")) {
       requirements.push({
-        type: 'option',
+        type: "option",
         line: trimmedLine,
         option_string: trimmedLine,
       });
@@ -133,9 +143,9 @@ export async function parseRequirements(content: string): Promise<Requirements> 
     const fileRefMatch = trimmedLine.match(/^-(r|c)\s+(.+)/);
     if (fileRefMatch) {
       requirements.push({
-        type: 'file_reference',
+        type: "file_reference",
         line: trimmedLine,
-        reference_type: fileRefMatch[1] === 'r' ? 'requirement' : 'constraint',
+        reference_type: fileRefMatch[1] === "r" ? "requirement" : "constraint",
         filename: fileRefMatch[2].trim(),
       });
       continue;
@@ -147,7 +157,7 @@ export async function parseRequirements(content: string): Promise<Requirements> 
       const pathOrUrl = editableMatch[1].trim();
       const isVcs = /^(git|hg|svn|bzr)\+/.test(pathOrUrl); // Basic VCS check
       requirements.push({
-        type: 'editable',
+        type: "editable",
         line: trimmedLine,
         path_or_url: pathOrUrl,
         is_vcs: isVcs,
@@ -166,9 +176,12 @@ export async function parseRequirements(content: string): Promise<Requirements> 
     }
 
     const isUrl = /^(https?|ftp):\/\//.test(urlOrPathPart);
-    const isLocalPath = urlOrPathPart.startsWith('.') || urlOrPathPart.startsWith('/');
+    const isLocalPath =
+      urlOrPathPart.startsWith(".") || urlOrPathPart.startsWith("/");
     // Basic check for common archive extensions
-    const looksLikeArchive = /\.(whl|zip|tar\.gz|tgz|tar\.bz2|tar)$/i.test(urlOrPathPart);
+    const looksLikeArchive = /\.(whl|zip|tar\.gz|tgz|tar\.bz2|tar)$/i.test(
+      urlOrPathPart,
+    );
 
     // Treat as archive if it's a URL, looks like an archive file,
     // or if specified with 'name @ ...' syntax.
@@ -182,10 +195,10 @@ export async function parseRequirements(content: string): Promise<Requirements> 
         hashOptions.push(hashMatch[0].trim());
       }
       // Remove hashes from the main part for cleaner url/path
-      mainPart = mainPart.replace(hashRegex, '').trim();
+      mainPart = mainPart.replace(hashRegex, "").trim();
 
       requirements.push({
-        type: 'archive',
+        type: "archive",
         line: trimmedLine, // Store original full line
         url_or_path: mainPart,
         name: nameFromAt, // Use name if found via 'name @ ...'
@@ -205,11 +218,11 @@ export async function parseRequirements(content: string): Promise<Requirements> 
       while ((hashMatch = hashRegex.exec(mainPart)) !== null) {
         hashOptions.push(hashMatch[0].trim());
       }
-      mainPart = mainPart.replace(hashRegex, '').trim();
+      mainPart = mainPart.replace(hashRegex, "").trim();
 
       // Isolate marker (if present)
       let marker: string | undefined = undefined;
-      const markerSplit = mainPart.split(';', 2);
+      const markerSplit = mainPart.split(";", 2);
       if (markerSplit.length === 2) {
         mainPart = markerSplit[0].trim();
         marker = markerSplit[1].trim();
@@ -217,27 +230,26 @@ export async function parseRequirements(content: string): Promise<Requirements> 
 
       // Isolate extras (if present) - Handles one set of brackets
       let extras: string[] | undefined = undefined;
-      const extrasMatch = mainPart.match(/^([^\[]+)\[([^\]]+)\](.*)$/);
+      const extrasMatch = mainPart.match(/^([^[]+)\[([^\]]+)\](.*)$/);
       let namePart = mainPart; // Part potentially containing name and specifiers
-      let specifiersPart = ''; // Part containing only specifiers
+      let specifiersPart = ""; // Part containing only specifiers
 
       if (extrasMatch) {
         namePart = extrasMatch[1].trim(); // Name is before '['
         extras = extrasMatch[2]
-          .split(',')
+          .split(",")
           .map((e) => e.trim())
           .filter((e) => e);
         specifiersPart = extrasMatch[3].trim(); // Specifiers after ']'
       } else {
         // Find first version specifier operator to split name and specifiers
-        const specifierOperators = ['==', '!=', '<=', '>=', '<', '>', '~='];
+        const specifierOperators = ["==", "!=", "<=", ">=", "<", ">", "~="];
         let specIndex = -1;
-        let specOp = '';
+
         for (const op of specifierOperators) {
           const idx = mainPart.indexOf(op);
           if (idx !== -1 && (specIndex === -1 || idx < specIndex)) {
             specIndex = idx;
-            specOp = op;
           }
         }
 
@@ -247,25 +259,25 @@ export async function parseRequirements(content: string): Promise<Requirements> 
         } else {
           // No operators found, assume entire string is the name
           namePart = mainPart.trim();
-          specifiersPart = '';
+          specifiersPart = "";
         }
       }
 
       // Split specifiers string by commas
       const specifiers = specifiersPart
         ? specifiersPart
-            .split(',')
+            .split(",")
             .map((s) => s.trim())
             .filter((s) => s) // Remove empty strings
         : undefined; // Use undefined if empty for consistency
 
       // Basic validation: namePart should not be empty
       if (!namePart) {
-        throw new Error('Could not extract package name.');
+        throw new Error("Could not extract package name.");
       }
 
       requirements.push({
-        type: 'requirement',
+        type: "requirement",
         line: trimmedLine, // Store original logical line
         name: namePart,
         extras: extras,
@@ -273,8 +285,13 @@ export async function parseRequirements(content: string): Promise<Requirements> 
         marker: marker,
         hash_options: hashOptions.length > 0 ? hashOptions : undefined,
       });
-    } catch (e: any) {
-      console.warn(`Skipping line due to parsing error: "${trimmedLine}". Error: ${e.message}`);
+    } catch (e: unknown) {
+      if (!(e instanceof Error)) {
+        throw e; // Re-throw if not an Error instance
+      }
+      console.warn(
+        `Skipping line due to parsing error: "${trimmedLine}". Error: ${e.message}`,
+      );
       // Optionally push an 'error' type requirement or just skip
     }
   }

@@ -1,4 +1,7 @@
-export default function getLine(content: string, text: string): number | undefined {
+export default function getLine(
+  content: string,
+  text: string,
+): number | undefined {
   // Split the content into lines, handling both \n and \r\n line endings
   const lines = content.split(/\r?\n/);
 

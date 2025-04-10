@@ -14,13 +14,16 @@ export type Score = {
 };
 
 type OKResponse = {
-  status: 'ok';
+  status: "ok";
   score: Score;
 };
 
 type ScoreResponse = OKResponse;
 
-export default async function fetchPackageScore(ecosystem: string, packageName: string) {
+export default async function fetchPackageScore(
+  ecosystem: string,
+  packageName: string,
+) {
   const url = `https:/opensourcescore.dev/score/${ecosystem}/${packageName}`;
 
   const response = await fetch(url);
