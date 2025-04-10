@@ -23,7 +23,7 @@ async function main() {
         noteDescriptions,
         name,
         category,
-        score[category]
+        score[category],
       );
       logFn(message, {
         title,

@@ -27,7 +27,7 @@ export default defineConfig([
           // printWidth: 180,
           semi: true,
           // tabWidth: 2,
-          // trailingComma: "es5",
+          trailingComma: "all",
         },
       ],
     },

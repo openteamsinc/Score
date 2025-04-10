@@ -23,4 +23,4 @@ jobs:
           bun test
       - name: Build
         run: |
-          bun run bundl
+          bun run bundle

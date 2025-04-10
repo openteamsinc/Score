@@ -12,6 +12,9 @@
   },
   "keywords": [],
   "author": "",
+  "prettier": {
+    "trailingComma": "all"
+  },
   "license": "ISC",
   "dependencies": {
     "@actions/core": "^1.11.1",
