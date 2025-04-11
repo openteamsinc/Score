@@ -5,17 +5,18 @@ import fetchPackageScore, {
   Score,
 } from "./fetch/fetchPackageScore";
 
-import {
-  parseRequirements,
-  StandardRequirement,
-} from "./pypi/parseRequirements";
 import fs from "fs/promises";
 import getLine from "./utils/getLine";
 import fetchNoteDescriptions from "./fetch/fetchNoteDescriptions";
 import { createMessage, getLog } from "./messages";
 import { pyprojectParser } from "./pypi/pyprojectParser";
-import exists from "./utils/exists";
 import { getModifiedLines } from "./utils/diffUtils";
+import {
+  getCLIOption,
+  getFileOption,
+  packageJSONParser,
+  requirementsParser,
+} from "./utils/cli";
 
 async function makeNoticeFn(filePath: string) {
   const noteDescriptions = await fetchNoteDescriptions();
@@ -28,8 +29,6 @@ async function makeNoticeFn(filePath: string) {
     score: Score;
     lineNumber: number;
   }) => {
-    // const lineNumber = getLine(content, name);
-
     for (const [category, categoryScore] of getCategorizedScores(score)) {
       const logFn = getLog(categoryScore.value);
       const [title, message] = createMessage(
@@ -111,49 +110,6 @@ async function run(
   });
 
   await Promise.all(pScores);
-}
-
-function packageJSONParser(content: string): string[] {
-  const parsedContent = JSON.parse(content);
-  const dependencies = {
-    ...parsedContent.dependencies,
-    ...parsedContent.devDependencies,
-  };
-  return Object.keys(dependencies).filter((key) => key.length > 0);
-}
-
-function requirementsParser(content: string): string[] {
-  const reqs = parseRequirements(content);
-  return reqs
-    .filter((req): req is StandardRequirement => req.type === "requirement")
-    .map(({ name }) => name);
-}
-
-function getCLIOption(opt: string): string | null {
-  // First check command line arguments
-  const args = process.argv.slice(2);
-  const cliOpt = `--${opt}`;
-  const cliArgIndex = args.findIndex((arg) => arg === cliOpt);
-
-  if (cliArgIndex !== -1 && cliArgIndex < args.length - 1) {
-    const value = args[cliArgIndex + 1];
-    return value;
-  }
-  return null;
-}
-
-async function getFileOption(opt: string, fallback: string) {
-  const value: string | null = getCLIOption(opt) || core.getInput(opt);
-  if (value === "false") {
-    return null;
-  }
-  if (value.length > 0) {
-    return value;
-  }
-  if (await exists(fallback)) {
-    return fallback;
-  }
-  return null;
 }
 
 async function main() {

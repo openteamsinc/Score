@@ -32,9 +32,11 @@ export async function getFileDiff(
   filePath: string,
 ): Promise<string> {
   try {
+    console.debug(`git diff origin/${baseRef} HEAD -- ${filePath}`);
     const { stdout } = await execPromise(
-      `git diff origin/${baseRef} HEAD -- ${filePath}`,
+      `git diff --no-color origin/${baseRef} HEAD -- ${filePath}`,
     );
+    console.log(stdout);
     return stdout;
   } catch (error) {
     throw new Error(
@@ -119,7 +121,9 @@ export async function getModifiedLines(
           `No diff hunks found for ${filePath}, but diff output was not empty`,
         );
       }
-
+      console.log(
+        `Found ${modifiedLines.length} modified lines in ${filePath}`,
+      );
       return modifiedLines;
     } catch (error) {
       core.warning(`${error instanceof Error ? error.message : String(error)}`);

@@ -43,6 +43,31 @@ describe("parseHunkHeader", () => {
 });
 
 describe("parseModifiedLines", () => {
+  test("test real output from git", () => {
+    const diffOutput = `diff --git a/package.json b/package.json
+index 6db3326..7f42900 100644
+--- a/package.json
++++ b/package.json
+@@ -24,10 +24,10 @@
+   },
+   "devDependencies": {
+     "@eslint/js": "^9.24.0",
++    "@types/bun": "^1.2.9",
+     "eslint": "^9.24.0",
+     "eslint-plugin-prettier": "^5.2.6",
+-    "typescript-eslint": "^8.29.1",
+-    "@types/bun": "latest"
++    "typescript-eslint": "^8.29.1"
+   },
+   "peerDependencies": {
+     "typescript": "^5.0.0"
+`;
+
+    const result = parseModifiedLines(diffOutput);
+    expect(result.modifiedLines).toEqual([27, 30]);
+    expect(result.foundHunkHeader).toBe(true);
+  });
+
   test("identifies added lines in a simple diff", () => {
     const diffOutput = `@@ -1,3 +1,5 @@
  const unchanged = true;
