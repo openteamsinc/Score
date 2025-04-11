@@ -3,7 +3,7 @@ import {
   parseRequirements,
   type StandardRequirement,
   type Requirement,
-} from "./parseRequirements"; // Update the import path as needed
+} from "./parseRequirements";
 
 // Define the missing types based on the original file
 type FileReferenceRequirement = Requirement & {
