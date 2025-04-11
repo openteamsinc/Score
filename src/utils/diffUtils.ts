@@ -76,6 +76,7 @@ export function parseHunkHeader(hunkHeader: string): number | null {
  * @param diffOutput The diff output from git
  * @returns An object containing the modified line numbers and whether a hunk header was found
  */
+
 export function parseModifiedLines(diffOutput: string): {
   modifiedLines: number[];
   foundHunkHeader: boolean;
@@ -86,23 +87,25 @@ export function parseModifiedLines(diffOutput: string): {
   let foundHunkHeader = false;
 
   for (const line of patchLines) {
-    if (line.startsWith("@@")) {
+    // Trim whitespace from the beginning of the line for more robust parsing
+    const trimmedLine = line.trimStart();
+
+    if (trimmedLine.startsWith("@@")) {
       foundHunkHeader = true;
-      const parsedLineNumber = parseHunkHeader(line);
+      const parsedLineNumber = parseHunkHeader(trimmedLine);
       if (parsedLineNumber !== null) {
         lineNumber = parsedLineNumber;
       }
-    } else if (line.startsWith("+") && !line.startsWith("+++")) {
+    } else if (trimmedLine.startsWith("+") && !trimmedLine.startsWith("+++")) {
       modifiedLines.push(lineNumber);
       lineNumber++;
-    } else if (!line.startsWith("-")) {
+    } else if (!trimmedLine.startsWith("-")) {
       lineNumber++;
     }
   }
 
   return { modifiedLines, foundHunkHeader };
 }
-
 /**
  * Gets the modified lines for a specific file in a pull request
  * @param filePath Path to the file to check

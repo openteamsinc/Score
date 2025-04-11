@@ -70,9 +70,7 @@ describe("parseModifiedLines", () => {
   +const newFunction = () => {};`;
 
     // Add some debug logging
-    console.log("Test input:", diffOutput);
     const result = parseModifiedLines(diffOutput);
-    console.log("Test result:", result);
 
     expect(result.modifiedLines).toEqual([2, 14, 15]);
     expect(result.foundHunkHeader).toBe(true);

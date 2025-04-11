@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "bundle": " bun build --target node  --outfile dist/index.mjs src/main.ts",
-    "lint": "eslint ./src",
+    "lint": "eslint ./src && bunx tsc --noEmit",
     "lint:report": "eslint ./src --output-file eslint_report.json --format json"
   },
   "keywords": [],
@@ -24,7 +24,11 @@
   "devDependencies": {
     "@eslint/js": "^9.24.0",
     "eslint": "^9.24.0",
-    "eslint-plugin-prettier": "^5.2.6", 
-    "typescript-eslint": "^8.29.1"
+    "eslint-plugin-prettier": "^5.2.6",
+    "typescript-eslint": "^8.29.1",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   }
 }
