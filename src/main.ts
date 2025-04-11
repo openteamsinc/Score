@@ -1,4 +1,5 @@
 import core from "@actions/core";
+import { context } from "@actions/github";
 import fetchPackageScore, {
   getCategorizedScores,
   Score,
@@ -13,11 +14,21 @@ import getLine from "./utils/getLine";
 import fetchNoteDescriptions from "./fetch/fetchNoteDescriptions";
 import { createMessage, getLog } from "./messages";
 import { pyprojectParser } from "./pypi/pyprojectParser";
+import exists from "./utils/exists";
+import { getModifiedLines } from "./utils/diffUtils";
 
-async function makeNoticeFn(filePath: string, content: string) {
+async function makeNoticeFn(filePath: string) {
   const noteDescriptions = await fetchNoteDescriptions();
-  const postNotice = ({ name, score }: { name: string; score: Score }) => {
-    const lineNumber = getLine(content, name);
+  const postNotice = ({
+    name,
+    score,
+    lineNumber,
+  }: {
+    name: string;
+    score: Score;
+    lineNumber: number;
+  }) => {
+    // const lineNumber = getLine(content, name);
 
     for (const [category, categoryScore] of getCategorizedScores(score)) {
       const logFn = getLog(categoryScore.value);
@@ -38,17 +49,65 @@ async function makeNoticeFn(filePath: string, content: string) {
   return postNotice;
 }
 
+export function getBaseRef(): string | null {
+  return context.payload.pull_request?.["base"]?.ref || null;
+}
+
+async function getLinesToProcess(
+  filePath: string,
+  branchOrBoolFlag: string,
+): Promise<number[] | null> {
+  if (branchOrBoolFlag === "") {
+    return null;
+  }
+  if (branchOrBoolFlag === "false") {
+    return null;
+  }
+  const baseRef = branchOrBoolFlag === "true" ? getBaseRef() : branchOrBoolFlag;
+  if (baseRef == null) {
+    core.setFailed(
+      `Error: Unable to determine the base branch. either from github or diff-only option`,
+    );
+    return null;
+  }
+
+  return getModifiedLines(filePath, baseRef);
+}
+
 type ParserFN = (content: string) => string[];
-async function run(ecosystem: string, filePath: string, parser: ParserFN) {
+async function run(
+  ecosystem: string,
+  filePath: string,
+  parser: ParserFN,
+  diffOnly: string,
+) {
   const content = await fs.readFile(filePath, { encoding: "utf-8" });
+  const linesToProcess = await getLinesToProcess(filePath, diffOnly);
 
-  const reqs = await parser(content);
+  const reqs = parser(content);
 
-  const postNotice = await makeNoticeFn(filePath, content);
+  const postNotice = await makeNoticeFn(filePath);
 
   const pScores = reqs.map(async (name) => {
+    let lineNumber = getLine(content, name);
+    if (lineNumber == null && linesToProcess != null) {
+      console.warn(
+        `Warning: diff-only option is set, but ${name} was not found in the diff`,
+      );
+      return;
+    }
+
+    if (lineNumber == null) {
+      lineNumber = 0;
+    }
+
+    if (linesToProcess != null && !linesToProcess.includes(lineNumber)) {
+      console.info(`Skipping ${name} as it is not modified in the diff`);
+      return;
+    }
+
     const { score } = await fetchPackageScore(ecosystem, name);
-    return postNotice({ name, score });
+    return postNotice({ name, score, lineNumber });
   });
 
   await Promise.all(pScores);
@@ -83,24 +142,6 @@ function getCLIOption(opt: string): string | null {
   return null;
 }
 
-async function exists(filename: string): Promise<boolean> {
-  try {
-    await fs.stat(filename);
-    return true;
-  } catch (error) {
-    // Only return false for ENOENT (file not found) errors
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "ENOENT"
-    ) {
-      return false;
-    }
-    // Re-throw any other errors (permission issues, etc.)
-    throw error;
-  }
-}
 async function getFileOption(opt: string, fallback: string) {
   const value: string | null = getCLIOption(opt) || core.getInput(opt);
   if (value === "false") {
@@ -116,25 +157,28 @@ async function getFileOption(opt: string, fallback: string) {
 }
 
 async function main() {
+  const diffOnly: string =
+    getCLIOption("diff-only") || core.getInput("diff-only");
+
   const requirements = await getFileOption(
     "requirements-txt",
     "requirements.txt",
   );
   if (requirements != null) {
-    run("pypi", requirements, requirementsParser);
+    run("pypi", requirements, requirementsParser, diffOnly);
   } else {
     console.log("No requirements.txt file found.");
   }
 
   const pyproject = await getFileOption("pyproject-toml", "pyproject.toml");
   if (pyproject != null) {
-    run("pypi", pyproject, pyprojectParser);
+    run("pypi", pyproject, pyprojectParser, diffOnly);
   } else {
     console.log("No pyproject.toml file found.");
   }
   const packageJSON = await getFileOption("package-json", "package.json");
   if (packageJSON != null) {
-    run("npm", packageJSON, packageJSONParser);
+    run("npm", packageJSON, packageJSONParser, diffOnly);
   } else {
     console.log("No package.json file found.");
   }
