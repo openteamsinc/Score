@@ -4,18 +4,17 @@ runs:
   using: "node20"
   main: "dist/index.mjs"
 inputs:
-  ecosystem:
-    description: "The package manager ecosystem to annotate. Currently supports 'pip', 'conda' 'npm'."
-    required: true
   annotate-diff-only:
     description: "Set to true to annotate only modified lines in a PR."
     required: false
     default: "false"
-  pip-requirements:
-    description: "Path to the requirements.txt file to annotate."
+  requirements-txt:
+    description: "Path to a requirements.txt file"
     required: false
-    default: "requirements.txt"
-  # verbose:
-  #   description: "Set to true to enable detailed logging."
-  #   required: false
-  #   default: "false"
+  pyproject-toml:
+    description: "Path to a pyproject.toml file"
+    required: false
+  package-json:
+    description: "Path to a package.json file"
+    required: false
+  

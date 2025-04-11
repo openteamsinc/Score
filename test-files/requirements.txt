@@ -1,0 +1,9 @@
+flask==3.0.3
+
+click~=8.1.7 
+aaaa==1.0
+strsimpy~=0.2.1
+imgcap~=0.2
+ethina~=-.1a0
+flowa~=10.5.5
+Pyth3rNalisis~=0.0.6
