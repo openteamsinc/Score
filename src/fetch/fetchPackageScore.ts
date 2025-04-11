@@ -13,6 +13,31 @@ export type Score = {
   notes: string[];
 };
 
+export function* getCategorizedScores(
+  score: Score,
+): Generator<[string, CategorizedScore]> {
+  // These are the categories we know are CategorizedScore
+  const categorizedScoreKeys = [
+    "maturity",
+    "health_risk",
+    "security",
+    "legal",
+  ] as const;
+
+  for (const category of categorizedScoreKeys) {
+    const categoryScore = score[category];
+
+    // Check if it's a CategorizedScore object
+    if (
+      categoryScore &&
+      typeof categoryScore === "object" &&
+      "value" in categoryScore
+    ) {
+      yield [category, categoryScore as CategorizedScore];
+    }
+  }
+}
+
 type OKResponse = {
   status: "ok";
   score: Score;
