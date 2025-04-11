@@ -1,4 +1,4 @@
-import { TOML } from "bun";
+import toml from "toml";
 import { parseRequirement } from "./parseRequirements";
 
 type PyProjectToml = {
@@ -7,14 +7,14 @@ type PyProjectToml = {
   };
   tool?: {
     poetry?: {
-      dependencies?: Record<string, any>;
-      dev_dependencies?: Record<string, any>;
+      dependencies?: Record<string, unknown>;
+      dev_dependencies?: Record<string, unknown>;
     };
   };
 };
 
 export function pyprojectParser(content: string): string[] {
-  const parsedContent = TOML.parse(content) as PyProjectToml;
+  const parsedContent = toml.parse(content) as PyProjectToml;
   const dependencies = [];
 
   // Standard pyproject.toml dependencies - PEP 621
