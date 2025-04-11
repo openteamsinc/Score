@@ -1,27 +1,9 @@
 import { exec } from "child_process";
 import util from "util";
 import core from "@actions/core";
-import { context } from "@actions/github";
-import fs from "fs";
+import exists from "./exists";
 
 const execPromise = util.promisify(exec);
-
-/**
- * Gets the base branch reference from the pull request context
- * @returns The base branch reference or null if not found
- */
-export function getBaseRef(): string | null {
-  return context.payload.pull_request?.["base"]?.ref || null;
-}
-
-/**
- * Validates if a file exists and is accessible
- * @param filePath Path to the file to check
- * @returns Boolean indicating if the file exists
- */
-export function validateFilePath(filePath: string): boolean {
-  return fs.existsSync(filePath);
-}
 
 /**
  * Fetches the base branch from the remote
@@ -50,9 +32,11 @@ export async function getFileDiff(
   filePath: string,
 ): Promise<string> {
   try {
+    console.debug(`git diff origin/${baseRef} HEAD -- ${filePath}`);
     const { stdout } = await execPromise(
-      `git diff origin/${baseRef} HEAD -- ${filePath}`,
+      `git diff --no-color origin/${baseRef} HEAD -- ${filePath}`,
     );
+    console.log(stdout);
     return stdout;
   } catch (error) {
     throw new Error(
@@ -106,25 +90,21 @@ export function parseModifiedLines(diffOutput: string): {
 
   return { modifiedLines, foundHunkHeader };
 }
+
 /**
  * Gets the modified lines for a specific file in a pull request
  * @param filePath Path to the file to check
+ * @param baseRef The base branch reference
  * @returns Array of modified line numbers
  */
-export async function getModifiedLines(filePath: string): Promise<number[]> {
+export async function getModifiedLines(
+  filePath: string,
+  baseRef: string,
+): Promise<number[]> {
   try {
     // Validate file path
-    if (!validateFilePath(filePath)) {
+    if (!(await exists(filePath))) {
       core.warning(`File ${filePath} does not exist or cannot be accessed`);
-      return [];
-    }
-
-    // Get base branch ref
-    const baseRef = getBaseRef();
-    if (!baseRef) {
-      core.setFailed(
-        "Error: Unable to determine the base branch (baseRef). Please ensure this workflow is triggered by a pull request event.",
-      );
       return [];
     }
 
@@ -141,7 +121,9 @@ export async function getModifiedLines(filePath: string): Promise<number[]> {
           `No diff hunks found for ${filePath}, but diff output was not empty`,
         );
       }
-
+      console.log(
+        `Found ${modifiedLines.length} modified lines in ${filePath}`,
+      );
       return modifiedLines;
     } catch (error) {
       core.warning(`${error instanceof Error ? error.message : String(error)}`);

@@ -8,20 +8,31 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./
+      - name: test pyproject
+        uses: ./
         with:
           pyproject-toml: test-files/pyproject.toml
           requirements-txt: false
           package-json: false
 
-      - uses: ./
+      - name: test requirements
+        uses: ./
         with:
           requirements-txt: test-files/requirements.txt
           pyproject-toml: false
           package-json: false
 
-      - uses: ./
+      - name: test package.json
+        uses: ./
         with:
+          package-json: package.json
+          pyproject-toml: false
+          requirements-txt: false
+
+      - name: test diff only package.json
+        uses: ./
+        with:
+          diff-only: true
           package-json: package.json
           pyproject-toml: false
           requirements-txt: false

@@ -4,7 +4,7 @@ runs:
   using: "node20"
   main: "dist/index.mjs"
 inputs:
-  annotate-diff-only:
+  diff-only:
     description: "Set to true to annotate only modified lines in a PR."
     required: false
     default: "false"
@@ -17,4 +17,3 @@ inputs:
   package-json:
     description: "Path to a package.json file"
     required: false
-  
