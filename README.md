@@ -1,9 +1,7 @@
 # Annotate Requirements Action
 
 This GitHub Action reads your `requirements.txt`, `pyproject.toml` or `package.json` files,  
-fetches maturity and health data from the [opensourcescore.dev]([https://d.app](https://opensourcescore.dev/docs)), and annotates each package with recommendations.  
-It provides feedback on whether adding or updating a package will improve stability and maintainability.
-
+fetches maturity and health data from the [opensourcescore.dev](https://opensourcescore.dev/docs), and annotates each package with recommendations.  
 
 ## Inputs
 
