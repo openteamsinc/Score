@@ -22750,7 +22750,7 @@ function parseRequirements(content) {
 }
 
 // src/main.ts
-import * as fs from "fs/promises";
+import fs from "fs/promises";
 
 // src/utils/getLine.ts
 function getLine(content, text) {
@@ -22876,6 +22876,17 @@ function getCLIOption(opt) {
   }
   return null;
 }
+async function exists(filename) {
+  try {
+    await fs.stat(filename);
+    return true;
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+}
 async function getFileOption(opt, fallback) {
   const value = getCLIOption(opt) || import_core2.default.getInput(opt);
   if (value === "false") {
@@ -22884,7 +22895,7 @@ async function getFileOption(opt, fallback) {
   if (value.length > 0) {
     return value;
   }
-  if (await fs.exists(fallback)) {
+  if (await exists(fallback)) {
     return fallback;
   }
   return null;

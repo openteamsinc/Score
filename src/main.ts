@@ -8,7 +8,7 @@ import {
   parseRequirements,
   StandardRequirement,
 } from "./pypi/parseRequirements";
-import * as fs from "fs/promises";
+import fs from "fs/promises";
 import getLine from "./utils/getLine";
 import fetchNoteDescriptions from "./fetch/fetchNoteDescriptions";
 import { createMessage, getLog } from "./messages";
@@ -82,6 +82,25 @@ function getCLIOption(opt: string): string | null {
   }
   return null;
 }
+
+async function exists(filename: string): Promise<boolean> {
+  try {
+    await fs.stat(filename);
+    return true;
+  } catch (error) {
+    // Only return false for ENOENT (file not found) errors
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return false;
+    }
+    // Re-throw any other errors (permission issues, etc.)
+    throw error;
+  }
+}
 async function getFileOption(opt: string, fallback: string) {
   const value: string | null = getCLIOption(opt) || core.getInput(opt);
   if (value === "false") {
@@ -90,7 +109,7 @@ async function getFileOption(opt: string, fallback: string) {
   if (value.length > 0) {
     return value;
   }
-  if (await fs.exists(fallback)) {
+  if (await exists(fallback)) {
     return fallback;
   }
   return null;
