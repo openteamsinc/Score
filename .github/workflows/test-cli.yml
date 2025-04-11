@@ -12,17 +12,17 @@ jobs:
         with:
           pyproject-toml: test-files/pyproject.toml
           requirements-txt: false
-          packagepackage-json: false
+          package-json: false
 
       - uses: ./
         with:
           requirements-txt: test-files/requirements.txt
           pyproject-toml: false
-          packagepackage-json: false
+          package-json: false
 
       - uses: ./
         with:
-          packagepackage-json: package.json
+          package-json: package.json
           pyproject-toml: false
           requirements-txt: false
 
