@@ -49,7 +49,9 @@ async function makeNoticeFn(filePath: string) {
 }
 
 export function getBaseRef(): string | null {
-  return context.payload.pull_request?.["base"]?.ref || null;
+  const baseRef = context.payload.pull_request?.["base"]?.ref || null;
+  console.log(`Base ref from github context is: ${baseRef}`);
+  return baseRef;
 }
 
 async function getLinesToProcess(
@@ -57,9 +59,11 @@ async function getLinesToProcess(
   branchOrBoolFlag: string,
 ): Promise<number[] | null> {
   if (branchOrBoolFlag === "") {
+    console.log(`diff-only option is set to empty string, skipping diff check`);
     return null;
   }
   if (branchOrBoolFlag === "false") {
+    console.log(`diff-only option is set to false, skipping diff check`);
     return null;
   }
   const baseRef = branchOrBoolFlag === "true" ? getBaseRef() : branchOrBoolFlag;
@@ -69,7 +73,7 @@ async function getLinesToProcess(
     );
     return null;
   }
-
+  console.log(`diff-only option is set to ${baseRef}`);
   return getModifiedLines(filePath, baseRef);
 }
 
@@ -115,6 +119,7 @@ async function run(
 async function main() {
   const diffOnly: string =
     getCLIOption("diff-only") || core.getInput("diff-only");
+  console.log(`diff-only option: ${diffOnly}`);
 
   const requirements = await getFileOption(
     "requirements-txt",
